@@ -2,7 +2,7 @@ const log = (msg) =>{return console.log(msg)}
 const sW = (n=1)=>{return window.innerWidth*n}
 const sH = (n=1)=>{return window.innerHeight*n}
 const randomColor = ()=>{return "rgb("+Math.round(Math.random()*256)+","+Math.round(Math.random()*256)+","+Math.round(Math.random()*256)+")"} 
-const randomNumber = (min,max)=>{return Math.random()*(max-min)+min}
+const randInt = (min,max)=>{return Math.floor(Math.random()*(max-min)+min)}
 const posX = (x) =>{return (x/100)*window.innerWidth}
 const posY = (y) =>{return (y/100)*window.innerHeight}
 const F9 = {
@@ -348,8 +348,7 @@ CaMeRa.prototype.lookAt = function(body){
 		let y = body.y+sH(.5)+body.height/2;
 		if(y>F9.World.Size.HEIGHT){y = F9.World.Size.HEIGHT}
 		else if(y<sH()){y = sH()+1}else{}
-		this.x = x;
-		this.y = y;
+		F9.Pocket.userCam.position(x,y);
 	}else{return}
 }
 CaMeRa.prototype.shake = function(shakeX=true,shakeY=true,xe,ye,times=1,v=10){
@@ -399,7 +398,6 @@ const updateCamera = (cam)=>{
 			else if(F9.Pocket.pErmIt){
 				body.x -= (xincr-(body.motionSlice/100*xincr));
 				body.ds.left = body.x + "px";
-				F9.Pocket.pErmIt = false;
 			}else{}
 		});
 		cam.prevx = cam.x;
