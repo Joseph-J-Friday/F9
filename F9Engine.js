@@ -2,7 +2,7 @@ const log = (msg) =>{return console.log(msg)}
 const sW = (n=1)=>{return window.innerWidth*n}
 const sH = (n=1)=>{return window.innerHeight*n}
 const randomColor = ()=>{return "rgb("+Math.round(Math.random()*256)+","+Math.round(Math.random()*256)+","+Math.round(Math.random()*256)+")"} 
-const randInt = (min,max)=>{return Math.floor(Math.random()*(max-min)+min)}
+const randomNumber = (min,max)=>{return Math.random()*(max-min)+min}
 const posX = (x) =>{return (x/100)*window.innerWidth}
 const posY = (y) =>{return (y/100)*window.innerHeight}
 const F9 = {
@@ -42,6 +42,8 @@ const F9 = {
 		collisionDetection: false,
 		pErmIt: false,
 		cR: true,
+		geeS: false,
+		tRaSh: []
 	},
 	Garbage: {},
 	Recursion: {}
@@ -66,6 +68,7 @@ const garbageCollection = (bodys)=>{
 			body.disposeEvent.a = body;
 			body.dom.dispatchEvent(body.disposeEvent);
 		});
+		F9.Pocket.tRaSh.unshift(...bodys);
 	}catch(err){}
 }
 const recurer = function(i,a,t){
@@ -135,19 +138,43 @@ butn.prototype.attachController = function(ct){
 			break;
 		case "UP":
 			this.dom.addEventListener("touchstart",()=>{F9.Pocket.userCam.stalkee!==undefined ? F9.Pocket.userCam.stalkee.vUP() : log("F9: .stalk(body) of camera is undefined.\n")});
-			this.dom.addEventListener("touchend",()=>{F9.Pocket.userCam.stalkee!==undefined ? cancelAnimationFrame(F9.Pocket.userCam.stalkee.aFu) : log("F9: .stalk(body) of camera is undefined.\n")});
+			this.dom.addEventListener("touchend",()=>{
+				if(F9.Pocket.userCam.stalkee!==undefined){
+					cancelAnimationFrame(F9.Pocket.userCam.stalkee.aFu);
+					F9.Pocket.userCam.stalkee.Ydirection = undefined;
+				}
+				else{log("F9: .stalk(body) of camera is undefined.\n")}	
+			});
 			break;
 		case "DOWN":
 			this.dom.addEventListener("touchstart",()=>{F9.Pocket.userCam.stalkee!==undefined ? F9.Pocket.userCam.stalkee.vDOWN() : log("F9: .stalk(body) of camera is undefined.\n")});
-			this.dom.addEventListener("touchend",()=>{F9.Pocket.userCam.stalkee!==undefined ? cancelAnimationFrame(F9.Pocket.userCam.stalkee.aFd) : log("F9: .stalk(body) of camera is undefined.\n")});
+			this.dom.addEventListener("touchend",()=>{
+				if(F9.Pocket.userCam.stalkee!==undefined){
+					cancelAnimationFrame(F9.Pocket.userCam.stalkee.aFd);
+					F9.Pocket.userCam.stalkee.Ydirection = undefined;
+				}
+				else{log("F9: .stalk(body) of camera is undefined.\n")}
+			});
 			break;
 		case "LEFT":
 			this.dom.addEventListener("touchstart",()=>{F9.Pocket.userCam.stalkee!==undefined ? F9.Pocket.userCam.stalkee.vLEFT() : log("F9: .stalk(body) of camera is undefined.\n")});
-			this.dom.addEventListener("touchend",()=>{F9.Pocket.userCam.stalkee!==undefined ? cancelAnimationFrame(F9.Pocket.userCam.stalkee.aFl) : log("F9: .stalk(body) of camera is undefined.\n")});
+			this.dom.addEventListener("touchend",()=>{
+				if(F9.Pocket.userCam.stalkee!==undefined){
+					cancelAnimationFrame(F9.Pocket.userCam.stalkee.aFl);
+					F9.Pocket.userCam.stalkee.Xdirection = undefined;
+				}
+				else{log("F9: .stalk(body) of camera is undefined.\n")}
+			});
 			break;
 		case "RIGHT":
 			this.dom.addEventListener("touchstart",()=>{F9.Pocket.userCam.stalkee!==undefined ? F9.Pocket.userCam.stalkee.vRIGHT() : log("F9: .stalk(body) of camera is undefined.\n")});
-			this.dom.addEventListener("touchend",()=>{F9.Pocket.userCam.stalkee!==undefined ? cancelAnimationFrame(F9.Pocket.userCam.stalkee.aFr) : log("F9: .stalk(body) of camera is undefined.\n")});
+			this.dom.addEventListener("touchend",()=>{
+				if(F9.Pocket.userCam.stalkee!==undefined){
+					cancelAnimationFrame(F9.Pocket.userCam.stalkee.aFr);
+					F9.Pocket.userCam.stalkee.Xdirection = undefined;	
+				}
+				else{log("F9: .stalk(body) of camera is undefined.\n")}
+			});
 			break;
 		default:
 			throw new Error("Unknown controller type\n");
@@ -169,12 +196,8 @@ butn.prototype.refresh = function(){
 	this.ds.borderRadius = this.arc+"px";
 	this.ds.border = this.stroke+"px solid "+this.strokeColor;
 }
-butn.prototype.hide = function(){
-	this.ds.display = "none";
-}
-butn.prototype.show = function(){
-	this.ds.display = "";
-}
+butn.prototype.hide = function(){this.ds.display = "none"}
+butn.prototype.show = function(){this.ds.display = ""}
 const cameraShaker = (cam,shakeX,shakeY,xe,ye,v)=>{
 	F9.Pocket.pErmIt = true;
 	if(cam.shakeCount>0){
@@ -199,9 +222,41 @@ const cameraShaker = (cam,shakeX,shakeY,xe,ye,v)=>{
 	else{return}
 	return "F9: CAMERA SHAKEN";
 }
-const checkCollision = function(key,checker,v=0){
+const checkCollision = function(key,checker,v=0,mh=0,jv=0,step=false){
 	if(key===0){
-	
+		F9.World.Bodies.forEach(body=>{
+			if(body instanceof obj && body!==checker && body.isRigid && (checker.y+checker.height-checker.ycrop>=body.y+body.ycrop && checker.y+checker.height-checker.ycrop<body.y+body.height-body.ycrop) && (checker.x+checker.width-checker.xcrop>=body.x+body.xcrop && checker.x+checker.xcrop<=body.x+body.width-body.xcrop)){
+				checker.collisionEvent.b = body;
+				checker.collisionEvent.a = checker;
+				if(checker.colliders[1] && body.colliders[3]){
+					checker.dom.dispatchEvent(checker.collisionEvent);
+					if(!body.preD && !checker.preD){
+						if((body.massRef<checker.massRef && !checker.carriage) || body.massRef===0 || body.massRef>=checker.massRef){
+							if(F9.Pocket.cR){
+								checker.y = body.y+body.ycrop-checker.height+checker.ycrop-.001;
+								checker.cht = mh;
+								if(checker.butKicKer!==this){
+									checker.butKicKer.cht = mh;
+									checker.butKicker = checker;
+								}else{}
+							}else{}
+						}
+						else if(checker.carriage && body.massRef<checker.massRef){
+							if(F9.Pocket.cR){
+								checker.y = body.y+body.ycrop-checker.height+checker.ycrop-.001;
+								body.butKicKer = checker;
+								body.vJUMP(false,true,jv,mh+body.height);
+							}else{}
+						}else{}
+					}
+					else{
+						body.preD = false;
+						checker.preD = false;
+					}
+				}else{}
+				if(!F9.Pocket.autoR) checker.refresh();
+			}else{}
+		});
 	}
 	else if(key===1){
 		if(checker.y+checker.ycrop<=-(F9.Pocket.userCam.y-sH())){
@@ -210,34 +265,55 @@ const checkCollision = function(key,checker,v=0){
 		else{
 			F9.World.Bodies.forEach(body=>{
 				if(body instanceof obj && body!==checker && body.isRigid && (checker.y+checker.ycrop<=body.y+body.height-body.ycrop && checker.y+checker.ycrop>=body.y+body.ycrop) && (checker.x+checker.width-checker.xcrop>=body.x+body.xcrop && checker.x+checker.xcrop<=body.x+body.width-body.xcrop)){
+					checker.collisionEvent.b = body;
+					checker.collisionEvent.a = checker;
 					if(body.isLanded || body.mass===0){
-						checker.Jnn = 0;
-						body.onMe.push(checker);
-						checker.floor = body;
-						checker.collisionEvent.b = body;
-						checker.collisionEvent.a = checker;
 						if(checker.colliders[3] && body.colliders[1]){
 							checker.dom.dispatchEvent(checker.collisionEvent);
-							if(!F9.Pocket.autoR) checker.refresh();
-							if(F9.Pocket.cR){
-								checker.isLanded = true;
-								checker.isJumping = false;
-								checker.baSe = body.y+body.height-body.ycrop;
-								checker.y = checker.baSe-checker.ycrop+.001;
-								checker.ds.bottom = checker.y + "px";
-								return;
-							}else{return}
-						}else{return}
+							if(!body.preD && !checker.preD){
+								if(F9.Pocket.cR){
+									checker.isLanded = true;
+									checker.isJumping = false;
+									checker.isFalling = false;
+									checker.mass = checker.massRef;
+									checker.Jnn = 0;
+									body.onMe.push(checker);
+									checker.floor = body;
+									checker.baSe = body.y+body.height-body.ycrop;
+									checker.y = checker.baSe-checker.ycrop+.001;
+									checker.ds.bottom = checker.y + "px";
+									if(body.massRef!==0) body.suPPlyLoad(checker);
+								}else{}
+							}
+							else{
+								body.preD = false;
+								checker.preD = false;
+							}
+						}else{}
 					}
 					else if(!body.isLanded && checker.mass>body.mass){
-						checker.Jnn = 0;
-						body.mass = checker.mass+.1;
-						return
+						if(checker.colliders[3] && body.colliders[1]){
+							checker.dom.dispatchEvent(checker.collisionEvent);
+							if(!body.preD && !checker.preD){
+								checker.Jnn = 0;
+								if(F9.Pocket.cR){
+									checker.baSe = body.y+body.height-body.ycrop;
+									checker.y = checker.baSe-checker.ycrop+.001;
+									checker.ds.bottom = checker.y + "px";
+									body.mass = checker.mass;
+								}else{}
+							}
+							else{
+								body.preD = false;
+								checker.preD = false;
+							}
+						}else{}
 					}
 					else{
 								
 					}
-				}
+					if(!F9.Pocket.autoR) checker.refresh();
+				}else{}
 			});
 		}
 	}
@@ -250,29 +326,85 @@ const checkCollision = function(key,checker,v=0){
 				switch(key){
 					case 2:
 						if(checker.colliders[0] && body.colliders[2]){
-							if(F9.Pocket.cR) checker.x = body.x+body.width-body.xcrop-checker.xcrop+.001;
 							checker.dom.dispatchEvent(checker.collisionEvent);
+							if(!body.preD && !checker.preD){
+								if(F9.Pocket.cR){
+									checker.x = body.x+body.width-body.xcrop-checker.xcrop+.001;
+									if(body.massRef!==0 && checker.puSher.massSum+body.massRef+body.getLOAd()<checker.puSher.massRef){
+										checker.puSher.massSum += body.massRef;
+										body.puSher = checker.puSher;
+										body.vLEFT(true,v);
+									}else{}
+									checker.x = body.x+body.width-body.xcrop-checker.xcrop+.001;
+								}else{}
+							}
+							else{
+								body.preD = false;
+								checker.preD = false;
+							}
 							if(!F9.Pocket.autoR) checker.refresh();
 						}else{}
 						break;
 					case 3:
 						if(checker.colliders[2] && body.colliders[0]){
-							if(F9.Pocket.cR) checker.x = body.x+body.xcrop-checker.width+checker.xcrop-.001;
 							checker.dom.dispatchEvent(checker.collisionEvent);
+							if(!body.preD && !checker.preD){
+								if(F9.Pocket.cR){
+									checker.x = body.x+body.xcrop-checker.width+checker.xcrop-.001;
+									if(body.massRef!==0 && checker.puSher.massSum+body.massRef+body.getLOAd()<checker.puSher.massRef){
+										checker.puSher.massSum += body.massRef;
+										body.puSher = checker.puSher;
+										body.vRIGHT(true,v)
+									}else{}	
+									checker.x = body.x+body.xcrop-checker.width+checker.xcrop-.001;
+								}else{}
+							}
+							else{
+								body.preD = false;
+								checker.preD = false;
+							}
 							if(!F9.Pocket.autoR) checker.refresh();
 						}else{}
 						break;
 					case 4:
 						if(checker.colliders[1] && body.colliders[3]){
-							if(F9.Pocket.cR) checker.y = body.y+body.ycrop-checker.height+checker.ycrop-.001;
 							checker.dom.dispatchEvent(checker.collisionEvent);
+							if(!body.preD && !checker.preD){
+								if(F9.Pocket.cR){
+									checker.y = body.y+body.ycrop-checker.height+checker.ycrop-.001;
+									if(body.massRef!==0 && checker.puSher.massSum+body.massRef<checker.puSher.massRef){
+										checker.puSher.massSum += body.massRef;
+										body.puSher = checker.puSher;
+										body.vUP(true,v);
+										checker.y = body.y+body.ycrop-checker.height+checker.ycrop-.001;
+									}else{}
+								}else{}
+							}
+							else{
+								body.preD = false;
+								checker.preD = false;
+							}
 							if(!F9.Pocket.autoR) checker.refresh();
 						}else{}
 						break;
 					default:
 						if(checker.colliders[3] && body.colliders[1]){
-							if(F9.Pocket.cR) checker.y = body.y+body.height-body.ycrop-checker.ycrop+.001;
 							checker.dom.dispatchEvent(checker.collisionEvent);
+							if(!body.preD && !checker.preD){
+								if(F9.Pocket.cR){
+									checker.y = body.y+body.height-body.ycrop-checker.ycrop+.001;
+									if(body.massRef!==0 && checker.puSher.massSum+body.massRef<checker.puSher.massRef){
+										checker.puSher.massSum += body.massRef;
+										body.puSher = checker.puSher;
+										body.vDOWN(true,v);
+										checker.y = body.y+body.height-body.ycrop-checker.ycrop+.001;
+									}else{}
+								}else{}
+							}
+							else{
+								body.preD = false;
+								checker.preD = false;
+							}
 							if(!F9.Pocket.autoR) checker.refresh();
 						}else{}
 				}
@@ -280,12 +412,13 @@ const checkCollision = function(key,checker,v=0){
 			}
 			else{}
 		});
+		if(!bool) checker.puSher.massSum = 0;
 		if(checker.carriage){
 			if(key===2 && !bool){
-				checker.onMe.forEach(body=>{body.vLEFT(true,v,checker.speed)});
+				checker.onMe.forEach(body=>{body.vLEFT(true,v)});
 			}
 			else if(key===3 && !bool){
-				checker.onMe.forEach(body=>{body.vRIGHT(true,v,checker.speed)});
+				checker.onMe.forEach(body=>{body.vRIGHT(true,v)});
 			}
 			else{}
 		}
@@ -298,7 +431,10 @@ const CaMeRa = function(){
 	this.type = 1;
 	this.x = this.prevx = sW();
 	this.y = this.prevy = sH();
-	this.xlp = this.ylp = 50;
+	this.xlp = posX(50);
+	this.ylp = posY(50);
+	this.xLIM = F9.World.Size.WIDTH;
+	this.yLIM = F9.World.Size.HEIGHT;
 	this.zoom = this.prevzoom = 100;
 	this.shakeCount = 0;
 	this.stalkee = undefined;
@@ -312,6 +448,9 @@ CaMeRa.prototype.setType = function(t){
 			break;
 		case "LOCKED-ON":
 			this.type = 2;
+			break;
+		case "PAGER":
+			this.type = 3;
 			break;
 		default:
 			throw new Error("Camera type "+t+" is invalid");
@@ -334,11 +473,12 @@ CaMeRa.prototype.smoothZoom = function(perc){
 }
 CaMeRa.prototype.position = function(x,y){
 	F9.Pocket.pErmIt = true;
-	this.x = x; this.y = y;
+	this.x = x; 
+	this.y = y;
 }
 CaMeRa.prototype.lockPoints = function(x=50,y=x){
-	this.xlp = x;
-	this.ylp = y;
+	this.xlp = posX(x);
+	this.ylp = posY(y);
 }
 CaMeRa.prototype.lookAt = function(body){
 	if(body!==undefined){
@@ -348,7 +488,7 @@ CaMeRa.prototype.lookAt = function(body){
 		let y = body.y+sH(.5)+body.height/2;
 		if(y>F9.World.Size.HEIGHT){y = F9.World.Size.HEIGHT}
 		else if(y<sH()){y = sH()+1}else{}
-		F9.Pocket.userCam.position(x,y);
+		this.position(x,y);
 	}else{return}
 }
 CaMeRa.prototype.shake = function(shakeX=true,shakeY=true,xe,ye,times=1,v=10){
@@ -356,39 +496,13 @@ CaMeRa.prototype.shake = function(shakeX=true,shakeY=true,xe,ye,times=1,v=10){
 	return cameraShaker(this,shakeX,shakeY,xe,ye,v);
 }
 CaMeRa.prototype.stalk = function(body){
-	let direction;
-	if(this.stalkee!==undefined){
-		if(this.stalkee.direction!==undefined) direction = this.stalkee.direction;
-		cancelAnimationFrame(this.stalkee.aFu);
-		cancelAnimationFrame(this.stalkee.aFd);
-		cancelAnimationFrame(this.stalkee.aFl);
-		cancelAnimationFrame(this.stalkee.aFr);
-		this.stalkee = body;
-		if(direction!==undefined){
-			switch(direction){
-				case "left":
-					this.stalkee.vLEFT();
-					break;
-				case "right":
-					this.stalkee.vRIGHT();
-					break;
-				case "up":
-					this.stalkee.vUP();
-					break;
-				default:
-					this.stalkee.vDOWN();				
-			}
-		}else{return}
-	}
-	else{this.stalkee = body;}
-	direction = null;
+	if(this.stalkee!==undefined) this.stalkee.vSTOP();
+	this.stalkee = body;
 }
 CaMeRa.prototype.isStalking = function(body){if(this.stalkee===body){return true}else{return false}}
 const updateCamera = (cam)=>{
 	let xincr = cam.x-cam.prevx;
 	let yincr = cam.y-cam.prevy;
-	let xxincr = cam.x-sW();
-	let yyincr = cam.y-sH();
 	if(cam.x!==cam.prevx && cam.x<F9.World.Size.WIDTH+1 && cam.x>sW()){
 		F9.World.Bodies.forEach(body=>{
 			if(!cam.isStalking(body)){
@@ -401,7 +515,6 @@ const updateCamera = (cam)=>{
 			}else{}
 		});
 		cam.prevx = cam.x;
-		cam.xincr = xxincr;
 	}
 	else if(cam.x===cam.prevx){}
 	else{
@@ -421,7 +534,6 @@ const updateCamera = (cam)=>{
 			}else{}
 		});
 		cam.prevy = cam.y;
-		cam.yincr = yyincr;
 	}
 	else if(cam.y===cam.prevy){}
 	else{
@@ -486,21 +598,26 @@ const obj = function(x=0,y=0,w=50,h=50,opt){
 	opt.crop = opt.crop || [];
 	this.c0 = opt.crop[0];
 	this.c1 = opt.crop[1];
-	this.speed = opt.speed || 1;
+	this.wrf = opt.wireframe || false;
+	this.velocity = opt.velocity || 1;
 	this.maxHeight = opt.maxHeight || 50;
 	this.cht = 0;
-	this.jumpSpeed = 1;
+	this.jumpSpeed = 5;
 	this.Jn = 1;
 	this.Jnn = 0;
+	this.massSum = 0;
+	this.lOAd = 0;
+	this.angleX = 0;
+	this.angleY = 0;
+	this.angleZ = 0;
 	this.mass = this.massRef = opt.mass || 0;
-	this.isLanded = this.mass===0 ? true : false;
+	this.isLanded = this.massRef===0 ? true : false;
 	this.texture = opt.texture || undefined;
 	this.tw = opt.textureWrapping || [];
 	this.color = opt.color || randomColor();
 	this.opacity = opt.opacity || 1;
 	this.xcrop = (this.c0 || 0)/100*this.width;
 	this.ycrop = (this.c1 || this.c0 || 0)/100*this.height;
-	this.stroke = opt.stroke || 0;
 	this.strokeColor = opt.strokeColor || "white";
 	this.arc = opt.arc || 0;
 	this.isRigid = opt.isRigid===undefined ? true : opt.isRigid;
@@ -508,11 +625,20 @@ const obj = function(x=0,y=0,w=50,h=50,opt){
 	this.collisionEvent = new CustomEvent("collide",{a:undefined,b:undefined});
 	this.touchEvent = new CustomEvent("touch",{a:undefined,b:undefined,c:undefined});
 	this.disposeEvent = new CustomEvent("dispose",{a:undefined});
+	this.moveEvent = new Event("move");
+	this.outOfMapEvent = new Event("outOfMap");
 	this.onMe = [];
-	this.floor = this;
 	this.carriage = false;
 	this.isJumping = false;
-	this.direction = this.side = undefined;
+	this.halterkey = false;
+	this.preD = false;
+	this.xMidWay = this.yMidWay = false;
+	this.Xdirection = this.Ydirection = this.side = undefined;
+	this.butKicKer = this;
+	this.puSher = this;
+	this.floor = this;
+	this.colidded = this;
+	this.baj = this;
 	this.colliders = opt.colliders || [true,true,true,true];
 	this.dom = document.createElement("div");
 	this.dom.addEventListener("touchstart",()=>{
@@ -527,22 +653,22 @@ const obj = function(x=0,y=0,w=50,h=50,opt){
 	this.ds.bottom = this.y+"px";
 	this.ds.width = this.width+"px";
 	this.ds.height = this.height+"px";
-	this.ds.border = this.stroke+"px solid "+this.strokeColor;
-	this.ds.backgroundImage = "url("+this.texture+".png)";
-	if(this.texture===undefined || this.texture==="" || this.texture===" ") this.ds.backgroundColor = this.color;
-	if(this.tw[0]===undefined){
-		this.ds.backgroundRepeat = F9.Pocket.txr;
-		this.ds.backgroundSize = F9.Pocket.txh===undefined ? F9.Pocket.txw+"%" : F9.Pocket.txw+"% "+F9.Pocket.txh+"%";
+	if(!this.wrf){
+		this.ds.backgroundImage = "url("+this.texture+".png)";
+		if(this.texture===undefined || this.texture==="" || this.texture===" ") this.ds.backgroundColor = this.color;
+		if(this.tw[0]===undefined){
+			this.ds.backgroundRepeat = F9.Pocket.txr;
+			this.ds.backgroundSize = F9.Pocket.txh===undefined ? F9.Pocket.txw+"%" : F9.Pocket.txw+"% "+F9.Pocket.txh+"%";
+		}
+		else{
+			this.ds.backgroundRepeat = this.tw[2];
+			this.ds.backgroundSize = this.tw[0]+"% "+this.tw[1]+"%";
+		}
 	}
-	else{
-		this.ds.backgroundRepeat = this.tw[2];
-		this.ds.backgroundSize = this.tw[0]+"% "+this.tw[1]+"%";
-	}
+	else{this.ds.border = ".5px solid #ffffff"}
 	this.ds.opacity = this.opacity;
 	this.ds.zIndex = "1";
 	this.ds.borderRadius = this.arc+"px";
-	this.width += this.stroke*2;
-	this.height += this.stroke*2;	
 	this.ds.filter = this.shader;
 	this.ds.zoom = (F9.Pocket.userCam.zoom || 100) + "%";
 	if(F9.Pocket.autoB){
@@ -551,31 +677,60 @@ const obj = function(x=0,y=0,w=50,h=50,opt){
 		document.body.appendChild(this.dom);
 	}
 }
+obj.prototype.rotateX = function(theta){
+	this.angleX = theta;
+	this.ds.transform = "rotateX("+theta+"deg)";
+}
+obj.prototype.rotateY = function(theta){
+	this.angleY = theta;
+	this.ds.transform = "rotateY("+theta+"deg)";
+}
+obj.prototype.rotateZ = function(theta){
+	this.angleZ = theta;
+	this.ds.transform = "rotateZ("+theta+"deg)";
+}
+obj.prototype.preventDefault = function(){this.preD = true}
+obj.prototype.POS_X = function(x){this.x = x; this.ds.left = x+"px"}
+obj.prototype.POS_Y = function(y){this.y = y; this.ds.bottom = y+"px"}
+obj.prototype.reMOveLoad = function(caller){
+	if(this.massRef!==0) this.lOAd -= caller.massRef;
+	if(this.floor!==this){this.floor.reMOveLoad(caller)}else{return}
+}
+obj.prototype.suPPlyLoad = function(supplier){
+	if(this.massRef!==0) this.lOAd += supplier.massRef;
+	if(this.floor!==this){this.floor.suPPlyLoad(supplier)}else{return} 
+}
+obj.prototype.getLOAd = function(){if(this.carriage){return this.lOAd}else{return 0}}
 obj.prototype.carrier = function(state){
 	if(state!==undefined && (state==="ON" || state==="OFF")){if(state==="ON"){this.carriage = true}else{this.carriage = false}}
 	else if(state===undefined){throw new Error("Carrier state is undefined\n")}
 	else{throw new Error("Unsupported carrier state\n")}
 }
 obj.prototype.reverse = function(){
-	this.vSTOP();
-	if(this.direction==="right"){
-		this.vLEFT();
-	}
-	else if(this.direction==="left"){
-		this.vRIGHT();
-	}
-	else if(this.direction==="up"){
-		this.vDOWN();
-	}
-	else{
-		this.vUP();
-	}
-}
-obj.prototype.vSTOP = function(){
 	cancelAnimationFrame(this.aFu);
 	cancelAnimationFrame(this.aFd);
 	cancelAnimationFrame(this.aFl);
 	cancelAnimationFrame(this.aFr);
+	if(this.Xdirection==="right"){
+		this.vLEFT();
+	}
+	else if(this.Xdirection==="left"){
+		this.vRIGHT();
+	}else{}
+	if(this.Ydirection==="up"){
+		this.vDOWN();
+	}
+	else if(this.Ydirection==="down"){
+		this.vUP();
+	}else{}
+}
+obj.prototype.vSTOP = function(){
+	this.halterkey = true;
+	cancelAnimationFrame(this.aFu);
+	cancelAnimationFrame(this.aFd);
+	cancelAnimationFrame(this.aFl);
+	cancelAnimationFrame(this.aFr);
+	this.Xdirection = this.Ydirection = undefined;
 }
 obj.prototype.setColliders = function(clds){
 	clds = clds || {};
@@ -588,122 +743,213 @@ obj.prototype.setLeftCollider = function(bool){bool ? this.colliders[0] = true :
 obj.prototype.setRightCollider = function(bool){bool ? this.colliders[2] = true : this.colliders[2] = false; return this}
 obj.prototype.setTopCollider = function(bool){bool ? this.colliders[1] = true : this.colliders[1] = false; return this}
 obj.prototype.setBottomCollider = function(bool){bool ? this.colliders[3] = true : this.colliders[3] = false; return this}
-obj.prototype.vLEFT = function(step=false,v=this.speed){
+obj.prototype.vLEFT = function(step=false,v=this.velocity){
 	cancelAnimationFrame(this.aFr);
-	this.direction = this.side = "left";
-	if(F9.Pocket.userCam.type===1){	
-		this.x -= v;
-		this.ds.left = this.x + "px";
-		if(this.x+this.width-this.xcrop<this.floor.x+this.floor.xcrop && !this.isJumping) this.floor = this;
-		this.mass = this.massRef;
+	if(this.halterkey){
+		this.halterkey = false;
+		return;
+	}
+	else{
+		this.Xdirection = this.side = "left";
+		if(F9.Pocket.userCam.stalkee===this){
+			if(F9.Pocket.userCam.type===1){	
+				this.x -= v;
+				this.ds.left = this.x + "px";
+			}
+			else{
+					
+			}
+		}
+		else{
+			this.x -= v;
+			this.ds.left = this.x + "px";
+		}
+		if(this.x<0 || this.x+this.width>sW()) this.dom.dispatchEvent(this.outOfMapEvent);
+		this.dom.dispatchEvent(this.moveEvent);
+		if(this.x+this.width-this.xcrop<this.floor.x+this.floor.xcrop){
+			if(this.floor.onMe.includes(this) && this.floor!==this) this.floor.reMOveLoad(this);
+			this.floor.onMe = this.floor.onMe.filter(bodi=>{return bodi!==this});
+			if(!this.isJumping) this.floor = this;
+		}else{}
 		this.onMe.forEach(body=>{
 			if(this.x+this.width-this.xcrop<body.x+body.xcrop){
-				body.floor = body;
+				this.reMOveLoad(body);
 				this.onMe = this.onMe.filter(bodi=>{return bodi!==body});
+				if(!body.isJumping) body.floor = body;
 			}else{}
 		});
-		if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(2,this,v);
+		if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(2,this,v,0,0,step);
+		if(!step) this.aFl = requestAnimationFrame(()=>{this.vLEFT(step,v)});
+	}	
+}
+obj.prototype.vRIGHT = function(step=false,v=this.velocity){
+	cancelAnimationFrame(this.aFl);
+	if(this.halterkey){
+		this.halterkey = false;
+		return;
 	}
 	else{
-	
-	}
-	if(!step) this.aFl = requestAnimationFrame(()=>{this.vLEFT()});
-}
-obj.prototype.vRIGHT = function(step=false,v=this.speed){
-	cancelAnimationFrame(this.aFl);
-	this.direction = this.side = "right";
-	if(F9.Pocket.userCam.type===1){
-		this.x += v;
-		this.ds.left = this.x + "px";
-		if(this.x+this.xcrop>this.floor.x+this.floor.width-this.floor.xcrop && !this.isJumping) this.floor = this;
-		this.mass = this.massRef;
+		this.Xdirection = this.side = "right";
+		if(F9.Pocket.userCam.stalkee===this){
+			if(F9.Pocket.userCam.type===1){
+				this.x += v;
+				this.ds.left = this.x + "px";
+			}
+			else if(F9.Pocket.userCam.type===2){
+				if(this.x+this.width/2<F9.Pocket.userCam.xlp && F9.Pocket.userCam.xLIM===F9.World.Size.WIDTH){
+					this.xMidWay = false;
+					this.x += v;
+					this.ds.left = this.x + "px";
+				}
+				else if(this.x+this.width/2>=F9.Pocket.userCam.xlp && F9.Pocket.userCam.xLIM>sW()){
+					this.xMidWay = true;
+					this.x = F9.Pocket.userCam.xlp-(this.width/2);
+					this.ds.left = this.x + "px";
+					F9.Pocket.userCam.x += v;
+					F9.Pocket.userCam.xLIM -= v;
+				//	log(F9.Pocket.userCam.x)
+				}
+				else if(this.x+this.width/2>=F9.Pocket.userCam.xlp && F9.Pocket.userCam.xLIM<=sW()){
+					this.xMidWay = false;
+					F9.Pocket.userCam.xLIM = sW();
+					F9.Pocket.userCam.x = F9.World.Size.WIDTH;
+					this.x += v;
+					this.ds.left = this.x + "px";
+				}
+			}
+			else{}
+		}
+		else{
+			this.x += v;
+			this.ds.left = this.x + "px";
+		}
+		if(this.x<0 || this.x+this.width>sW()) this.dom.dispatchEvent(this.outOfMapEvent);
+		this.dom.dispatchEvent(this.moveEvent);
+		if(this.x+this.xcrop>this.floor.x+this.floor.width-this.floor.xcrop){
+			if(this.floor.onMe.includes(this) && this.floor!==this) this.floor.reMOveLoad(this);
+			this.floor.onMe = this.floor.onMe.filter(bodi=>{return bodi!==this});
+			if(!this.isJumping) this.floor = this;
+		}else{}
 		this.onMe.forEach(body=>{
 			if(this.x+this.xcrop>body.x+body.width-body.xcrop){
-				body.floor = body;
+				this.reMOveLoad(body);
 				this.onMe = this.onMe.filter(bodi=>{return bodi!==body});
+				if(!body.isJumping) body.floor = body;
 			}else{}
 		});
-		if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(3,this,v);
+		if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(3,this,v,0,0,step);
+		if(!step) this.aFr = requestAnimationFrame(()=>{this.vRIGHT(step,v)});
 	}
-	else{
-	
-	}
-	if(!step) this.aFr = requestAnimationFrame(()=>{this.vRIGHT()});
 }
-obj.prototype.vUP = function(v=this.speed){
+obj.prototype.vUP = function(step=false,v=this.velocity){
 	cancelAnimationFrame(this.aFd);
-	this.direction = "up";
-	this.side = "top";
-	if(F9.Pocket.userCam.type===1){
-		this.y += v;
-		this.ds.bottom = this.y + "px";
-		if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(4,this);
+	if(this.halterkey){
+		this.halterkey = false;
+		return;
 	}
 	else{
-	
+		this.Ydirection = "up";
+		this.side = "top";
+		if(F9.Pocket.userCam.stalkee===this){
+			if(F9.Pocket.userCam.type===1){
+				this.y += v;
+				this.ds.bottom = this.y + "px";
+			}
+			else{
+						
+			}
+		}
+		else{
+			this.y += v;
+			this.ds.bottom = this.y + "px";
+		}
+		if(this.y<0 || this.y+this.height>sH()) this.dom.dispatchEvent(this.outOfMapEvent);
+		this.dom.dispatchEvent(this.moveEvent);
+		if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(4,this,v,0,0,step);
+		if(!step) this.aFu = requestAnimationFrame(()=>{this.vUP(step,v)});
 	}
-	this.aFu = requestAnimationFrame(()=>{this.vUP()});
 }
-obj.prototype.vDOWN = function(v=this.speed){
+obj.prototype.vDOWN = function(step=false,v=this.velocity){
 	cancelAnimationFrame(this.aFu);
-	this.direction = "down";
-	this.side = "bottom";
-	if(F9.Pocket.userCam.type===1){
-		this.y -= v;
-		this.ds.bottom = this.y + "px";
-		if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(5,this);
+	if(this.halterkey){
+		this.halterkey = false;
+		return;
 	}
 	else{
-	
+		this.Ydirection = "down";
+		this.side = "bottom";
+		if(F9.Pocket.userCam.stalkee===this){
+			if(F9.Pocket.userCam.type===1){
+				this.y -= v;
+				this.ds.bottom = this.y + "px";
+			}
+			else{
+								
+			}
+		}
+		else{
+			this.y -= v;
+			this.ds.bottom = this.y + "px";
+		}
+		if(this.y<0 || this.y+this.height>sH()) this.dom.dispatchEvent(this.outOfMapEvent);
+		this.dom.dispatchEvent(this.moveEvent);
+		if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(5,this,v,0,0,step);
+		if(!step) this.aFd = requestAnimationFrame(()=>{this.vDOWN(step,v)});
 	}
-	this.aFd = requestAnimationFrame(()=>{this.vDOWN()});
 }
-obj.prototype.vJUMP = function(returning=false){
-	this.direction = "up";
+obj.prototype.vJUMP = function(returning=false,externalForce=false,jv=this.jumpSpeed,mh=this.maxHeight){
+	this.Ydirection = "up";
 	this.side = "top";
 	if(!returning && this.Jnn<this.Jn){
 		cancelAnimationFrame(this.aFj);
 		this.isLanded = true;
 		this.isJumping = true;
+		this.isFalling = false;
+		this.floor.onMe = this.floor.onMe.filter(bodi=>{return bodi!==this});
+		if(this.floor!==this) this.floor.reMOveLoad(this);
 		this.cht = 0;
-		this.cht += this.jumpSpeed;
-		this.Jnn++;
+		this.cht += jv;
+		if(!externalForce) this.Jnn++;
 		if(F9.Pocket.userCam.stalkee===this){
 			if(F9.Pocket.userCam.type===1){	
-				this.y += this.jumpSpeed;
-				this.ds.bottom = this.y + "px";
-			}
-			else{
-					
-			}
-			if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(0,this); 
-		}
-		else{
-			
-		}
-		this.aFj = requestAnimationFrame(()=>{this.vJUMP(true)});
-	}
-	else if(returning && this.cht<this.maxHeight){
-		this.isLanded = true;
-		this.cht += this.jumpSpeed;
-		if(F9.Pocket.userCam.stalkee===this){
-			if(F9.Pocket.userCam.type===1){	
-				this.y += this.jumpSpeed;
+				this.y += jv;
 				this.ds.bottom = this.y + "px";
 			}
 			else{
 							
 			}
-			if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(0,this); 
 		}
 		else{
-			
+			this.y += jv;
+			this.ds.bottom = this.y + "px";
 		}
-		this.aFj = requestAnimationFrame(()=>{this.vJUMP(true)});
+		if(this.y<0 || this.y+this.height>sH()) this.dom.dispatchEvent(this.outOfMapEvent);
+		this.dom.dispatchEvent(this.moveEvent);
+		if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(0,this,0,mh,jv);
+		this.aFj = requestAnimationFrame(()=>{this.vJUMP(true,externalForce,jv,mh)});
 	}
-	else if(this.cht>=this.maxHeight){
-		this.isLanded = false;
+	else if(returning && this.cht<mh){
+		this.isLanded = true;
+		this.cht += jv;
+		if(F9.Pocket.userCam.stalkee===this){
+			if(F9.Pocket.userCam.type===1){	
+				this.y += jv;
+				this.ds.bottom = this.y + "px";
+			}
+			else{
+						
+			}
+		}
+		else{
+			this.y += jv;
+			this.ds.bottom = this.y + "px";
+		}
+		if(this.y<0 || this.y+this.height>sH()) this.dom.dispatchEvent(this.outOfMapEvent);
+		this.dom.dispatchEvent(this.moveEvent);
+		if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(0,this,0,mh,jv);
+		this.aFj = requestAnimationFrame(()=>{this.vJUMP(true,externalForce,jv,mh)});
 	}
+	else if(this.cht>=mh){this.floor = this}
 	else{return}
 }
 obj.prototype.multiJump = function(n=2){this.Jn = n}
@@ -714,33 +960,33 @@ obj.prototype.refresh = function(){
 	this.ds.bottom = this.y+"px";
 	this.ds.width = this.width+"px";
 	this.ds.height = this.height+"px";
-	this.ds.border = this.stroke+"px solid "+this.strokeColor;
-	if(this.texture===undefined || this.texture==="" || this.texture===" ") this.ds.backgroundColor = this.color;
-	this.ds.backgroundImage = "url("+this.texture+".png)";
-	if(this.tw[0]===undefined){
-		this.ds.backgroundRepeat = F9.Pocket.txr;
-		this.ds.backgroundSize = F9.Pocket.txh===undefined ? F9.Pocket.txw+"%" : F9.Pocket.txw+"% "+F9.Pocket.txh+"%";
+	if(!this.wrf){
+		if(this.texture===undefined || this.texture==="" || this.texture===" ") this.ds.backgroundColor = this.color;
+		this.ds.backgroundImage = "url("+this.texture+".png)";
+		if(this.tw[0]===undefined){
+			this.ds.backgroundRepeat = F9.Pocket.txr;
+			this.ds.backgroundSize = F9.Pocket.txh===undefined ? F9.Pocket.txw+"%" : F9.Pocket.txw+"% "+F9.Pocket.txh+"%";
+		}
+		else{
+			this.ds.backgroundRepeat = this.tw[2];
+			this.ds.backgroundSize = this.tw[0]+"% "+this.tw[1]+"%";
+		}
 	}
-	else{
-		this.ds.backgroundRepeat = this.tw[2];
-		this.ds.backgroundSize = this.tw[0]+"% "+this.tw[1]+"%";
-	}
+	else{this.ds.border = ".5px solid #ffffff"}
 	this.ds.opacity = this.opacity;
 	this.ds.borderRadius = this.arc+"px";
-	this.width += this.stroke*2;
-	this.height += this.stroke*2;	
 	this.ds.filter = this.shader;
 }
+obj.prototype.setMass = function(m){this.mass = this.massRef = m}
 obj.prototype.collapse = function(){if(this.floor!==this) this.floor = this}
-obj.prototype.update = function(){
-	this.refresh();
-	this.collapse();
-}
+obj.prototype.update = function(){this.refresh();this.collapse()}
 obj.prototype.on = function(ev,ex){this.dom.addEventListener(ev,ex)}
 obj.prototype.removeEventListener = function(ev,ex){this.dom.removeEventListener(ev,ex)}
 obj.prototype.fall = function(){
 	if(!this.isLanded){
-		this.direction = "down";
+		this.isFalling = true;
+		this.isJumping = false;
+		this.Ydirection = "down";
 		this.side = "bottom";
 		if(F9.Pocket.userCam.stalkee===this && this.isRigid){
 			if(F9.Pocket.userCam.type===1){
@@ -757,6 +1003,8 @@ obj.prototype.fall = function(){
 				this.ds.bottom = this.y + "px";
 			}else{}
 		}
+		if(this.y<0 || this.y+this.height>sH()) this.dom.dispatchEvent(this.outOfMapEvent);
+		this.dom.dispatchEvent(this.moveEvent);
 		if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(1,this);
 	}
 	else if(this.isLanded && this.floor===this){
@@ -778,6 +1026,7 @@ const tile = function(x=0,y=0,w=50,h=50,opt){
 	this.height = h;
 	opt = opt || {};
 	this.texture = opt.texture;
+	this.zIndex = opt.zIndex || 0;
 	this.color = opt.color || randomColor();	
 	this.opacity = opt.opacity || 1;
 	this.shader = opt.shader || F9.Pocket.shade;
@@ -801,7 +1050,7 @@ const tile = function(x=0,y=0,w=50,h=50,opt){
 	this.ds.backgroundRepeat = F9.Pocket.txr;
 	this.ds.backgroundSize = F9.Pocket.txh===undefined ? F9.Pocket.txw+"%" : F9.Pocket.txw+"% "+F9.Pocket.txh+"%";
 	this.ds.opacity = this.opacity;
-	this.ds.zIndex = "0";
+	this.ds.zIndex = this.zIndex;
 	this.ds.filter = this.shader;
 	this.ds.zoom = (F9.Pocket.userCam.zoom || 100) + "%";
 	if(F9.Pocket.autoB==="ON"){
@@ -843,9 +1092,9 @@ anchor.prototype.defaultControls = function(bool="ON"){
 		if(bool==="ON"){
 			switch(this.type){
 				case 1:
-					let b1 = F9.Button.Add(75,30,55,55,{text: "J",textColor: "#555",strokeColor: "#555",arc: 10});
+					let b1 = F9.Button.Add(75,15,55,55,{text: "J",textColor: "#555",strokeColor: "#555",arc: 10});
 					let b2 = F9.Button.Add(5,5,55,55,{text: "L",textColor: "#555",strokeColor: "#555",arc: 10,});
-					let b3 = F9.Button.Add(25,5,55,55,{text: "R",textColor: "#555",strokeColor: "#555",arc: 10,});
+					let b3 = F9.Button.Add(22,5,55,55,{text: "R",textColor: "#555",strokeColor: "#555",arc: 10,});
 					F9.Pocket.defaultButtons = [b1,b2,b3];
 					b1.attachController("JUMP");
 					b2.attachController("LEFT");
@@ -893,12 +1142,15 @@ anchor.prototype.setType = function(t){
 	switch(t){
 		case "PLATFORMER":
 			this.type = 1;
+			F9.Pocket.geeS = true;
 			break;
 		case "RPG":
 			this.type = 2;
+			F9.Pocket.geeS = false;
 			break;
 		case "ALL":
 			this.type = 3;
+			F9.Pocket.geeS = true;
 			break;
 		default:
 			throw new Error("Unsupported engine type.\n");
@@ -917,10 +1169,10 @@ anchor.prototype.collisionResponse = function(state){
 anchor.prototype.gravity = function(state){
 	switch(state){
 		case "ON":
-			F9.Pocket.gravitySwitch = true;
+			if(F9.Pocket.geeS) F9.Pocket.gravitySwitch = true;
 			break;
 		case "OFF":
-			F9.Pocket.gravitySwitch = false;
+			if(!F9.Pocket.geeS) F9.Pocket.gravitySwitch = false;
 			break;
 		default:
 			throw new Error("Illegal gravity state.\n");
@@ -935,6 +1187,10 @@ anchor.prototype.textureWrapping = (opt)=>{
 anchor.prototype.mapSize = function(w,h=w){
 	F9.World.Size.WIDTH = w;
 	F9.World.Size.HEIGHT = h;
+	if(F9.Pocket.userCam!==undefined){
+		F9.Pocket.userCam.xLIM = w;
+		F9.Pocket.userCam.yLIM = h;
+	}else{}
 }
 anchor.prototype.background = function(fill){
 	let mbg = document.documentElement.style;
@@ -982,7 +1238,7 @@ anchor.prototype.run = ()=>{
 			updateCamera(F9.Pocket.userCam);
 			if(F9.Pocket.autoR) ReFreshAll();
 			PULLL(F9.Pocket.userCam);
-		}else{throw new Error("Camera is not mounted. \n")}
+		}else{throw new Error("Camera is not mounted.\n")}
 	}
 }
 const createStack = function(cloned=false,t,cord,dim,matrix,margin,opt,original=this){
@@ -994,8 +1250,8 @@ const createStack = function(cloned=false,t,cord,dim,matrix,margin,opt,original=
 	if(dim.length === 1) dim = [dim[0],dim[0]];
 	if(matrix.length === 1) matrix = [matrix[0],matrix[0]];
 	if(margin.length === 1) margin = [margin[0],margin[0]];
-	if(margin[0]===0) margin[0] = .0001;
-	if(margin[1]===0) margin[1] = .0001;
+	if(margin[0]===0) margin[0] = .5;
+	if(margin[1]===0) margin[1] = .5;
 	
 	let arr = [];
 	let composite = undefined;
@@ -1046,21 +1302,21 @@ const createStack = function(cloned=false,t,cord,dim,matrix,margin,opt,original=
 					}
 					y += h;
 					r++;
-					ymargin += margin[1]+.0001;
+					ymargin += margin[1]+.001;
 					c = 0;
 					xmargin = 0;
 					composite = F9.RigidBody.Add(x+xmargin,y+ymargin,w,h,opt);
 					
 					c++;
 					x += w;
-					xmargin += margin[0]+.0001;
+					xmargin += margin[0]+.001;
 				}
 				else{
 					composite = F9.RigidBody.Add(x+xmargin,y+ymargin,w,h,opt);
 					if(r>0 && r<matrix[0]-1 && c>0 && c<matrix[1]-1) this.amid.push(composite);
 					c++;
 					x += w;
-					xmargin += margin[0]+.0001;
+					xmargin += margin[0]+.001;
 				}
 				arr.push(composite);
 			}	
@@ -1101,20 +1357,20 @@ const createStack = function(cloned=false,t,cord,dim,matrix,margin,opt,original=
 					x = cord[0];
 					y += h;
 					r++;
-					ymargin += margin[1]+.0001;
+					ymargin += margin[1]+.001;
 					c = 0;
 					xmargin = 0;
 					composite = F9.RigidBody.Add(x+xmargin,y+ymargin,w,h,opt);
 					c++;
 					x += w;
-					xmargin += margin[0]+.0001;
+					xmargin += margin[0]+.001;
 				}
 				else{
 					composite = F9.RigidBody.Add(x+xmargin,y+ymargin,w,h,opt);
 					if(r>0 && r<matrix[0]-1 && c>0 && c<matrix[1]-1) this.amid.push(composite);
 					c++;
 					x += w;
-					xmargin += margin[0]+.0001;
+					xmargin += margin[0]+.001;
 				}
 				arr.push(composite);
 			}	
@@ -1136,12 +1392,11 @@ createStack.prototype.hollow = function(bool=true){
 		this.hollowed = false;
 	}
 	return this;
-	
 }
 createStack.prototype.clone = function(xx,yy){return new createStack(true,this.type,[xx,yy],[this.dim0,this.dim1],[this.row,this.col],[this.xmrg,this.ymrg],this.opt,this)}
 createStack.prototype.on = function(ev,ex){this.composites.forEach(body=>{body.on(ev,ex)})}
 createStack.prototype.removeEventListener = function(ev,ex){this.composites.forEach(body=>{body.removeEventListener(ev,ex)})}
-F9.Engine.Start = ()=>{return new anchor();}
+F9.Engine.Start = ()=>{return new anchor()}
 F9.Button.Add = (x,y,w,h,opt)=>{return new butn(x,y,w,h,opt)}
 F9.RigidBody.Add = (x,y,w,h,opt)=>{return new obj(x,y,w,h,opt)}
 F9.RigidBody.Stack = (t,cord,dim,matrix,margin,opt)=>{return new createStack(false,t,cord,dim,matrix,margin,opt)}
@@ -1150,4 +1405,5 @@ F9.World.Bind = (...bodys)=>{if(bodys.length>0) return bind(bodys)}
 F9.World.Unbind = (...bodys)=>{if(bodys.length>0) return unbind(bodys)}
 F9.Camera.Mount = ()=>{return new CaMeRa()}
 F9.Garbage.Collect = (...bodys)=>{if(bodys.length>0 && F9.World.Bodies.length>0) return garbageCollection(bodys)}
+F9.Garbage.RecycleBin = ()=>{return F9.Pocket.tRaSh}
 F9.Recursion.Recur = function(intv,actn,t=Infinity){if(intv[intv.length-1]==="s"){return new recurer(Number(intv.substring(0,intv.length-1))*1000,actn,t)}else{throw new Error("Recursion interval is invalid.\n")}}
