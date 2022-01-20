@@ -2,7 +2,7 @@ const log = (msg) =>{return console.log(msg)}
 const sW = (n=1)=>{return window.innerWidth*n}
 const sH = (n=1)=>{return window.innerHeight*n}
 const randomColor = ()=>{return "rgb("+Math.round(Math.random()*256)+","+Math.round(Math.random()*256)+","+Math.round(Math.random()*256)+")"} 
-const randomNumber = (min,max)=>{return Math.random()*(max-min)+min}
+const randInt = (min,max)=>{return Math.floor(Math.random()*(max-min)+min)}
 const posX = (x) =>{return (x/100)*window.innerWidth}
 const posY = (y) =>{return (y/100)*window.innerHeight}
 const F9 = {
