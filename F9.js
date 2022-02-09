@@ -14,6 +14,10 @@ const F9 = {
 	Camera: {},
 	Button: {},
 	Buttons: [],
+	Media: {
+		Audios: [],
+		Videos: []
+	},
 	World: {
 		Size: {
 			WIDTH: sW(),
@@ -61,6 +65,14 @@ const F9 = {
 	Recursion: {},
 	Projectile: {}
 }
+const initF9 = ()=>{
+	F9.Media.Audios.forEach(slot=>{
+		slot.audio.muted = true;
+		slot.audio.play();
+		slot.audio.currentTime = "0";
+	});
+}
+window.addEventListener("click",()=>{initF9()});
 const prOjEctIlE = function(x,y,h,w,opt){
 	this.w = w;
 	this.h = h;
@@ -78,6 +90,7 @@ const prOjEctIlE = function(x,y,h,w,opt){
 	this.offSideEvent = new CustomEvent("offSide",{side:undefined});
 	this.offScreenEvent = new CustomEvent("offScreen",{side:undefined});
 	this.disposeEvent = new CustomEvent("dispose",{a:undefined});
+	this.finishEvent = new Event("finish");
 	let m = opt.mass || 0;
 	this.head = new obj(x+w-(h*1.5),y+(h/5),h*2.5,h*2.5,{opacity:0,mass:m});
 	this.x = this.head.x;
@@ -87,6 +100,7 @@ const prOjEctIlE = function(x,y,h,w,opt){
 	this.head.connect(this.core);
 	this.head.on("offScreen",(e)=>{
 		this.offScreenEvent.side = e.side;
+		this.offScreenEvent.a = {a1:e.a,a2:this.core,a3:this};
 		this.dom.dispatchEvent(this.offScreenEvent);
 	});
 	this.head.on("offSide",(e)=>{
@@ -106,10 +120,12 @@ const prOjEctIlE = function(x,y,h,w,opt){
 	});
 	this.rotate(90);
 }
+prOjEctIlE.prototype.dieAfter = function(time){this.dieTime = time}
 prOjEctIlE.prototype.launch = function(){
 	if(this.launchable){
 		try{
 			this.launchable = false;
+			if(this.dieTime) F9.Recursion.Recur(this.dieTime,()=>{F9.Garbage.Collect(this)},"1x");
 			let nx = (this.range * Math.cos(this.angle*(Math.PI/180)));
 			let ny = (this.range * Math.sin(this.angle*(Math.PI/180)));
 			let x = nx+this.x;
@@ -168,7 +184,7 @@ prOjEctIlE.prototype.launch = function(){
 		}catch(err){}
 	}else{return false}
 }
-prOjEctIlE.prototype.ignore = function(...bodys){this.head.ignore(bodys)}
+prOjEctIlE.prototype.omit = function(...bodys){this.head.omit(...bodys)}
 prOjEctIlE.prototype.stop = function(){this.finished = true}
 prOjEctIlE.prototype.rotate = function(theta){
 	let angle = theta*(Math.PI/180);
@@ -200,7 +216,11 @@ const rcf = (p,i,a)=>{
 	p.si = setTimeout(()=>{
 		requestAnimationFrame(()=>{a(p)});
 		p.TO++;
-		p.TO<p.t && p.redo ? requestAnimationFrame(()=>{rcf(p,i,a)}) : clearTimeout(p.si);	
+		if(p.TO<p.t && p.redo){requestAnimationFrame(()=>{rcf(p,i,a)})}
+		else{
+			clearTimeout(p.si);
+			p.dom.dispatchEvent(p.finishEvent);
+		}
 	},i);
 }
 const ReFreshAll = ()=>{
@@ -227,6 +247,8 @@ const garbageCollection = (bodys)=>{
 	}catch(err){}
 }
 const recurer = function(i,a,t){
+	this.dom = document.createElement("div");
+	this.finishEvent = new Event("finish");
 	if(t!==Infinity && t[t.length-1]==="x"){this.t = Number(t.substring(0,t.length-1))}
 	else if(t!==Infinity && t[t.length-1]!=="x"){throw new Error("Recursion count is invalid.\n")}
 	else if(t===Infinity){this.t = t}
@@ -235,6 +257,7 @@ const recurer = function(i,a,t){
 	if(this.TO<this.t) requestAnimationFrame(()=>{rcf(this,i,a)});
 	return this;
 }
+recurer.prototype.on = function(ev,ex){this.dom.addEventListener(ev,ex)}
 recurer.prototype.stop = function(){
 	this.redo = false;
 	clearTimeout(this.si);
@@ -257,15 +280,25 @@ const butn = function(x=0,y=0,w=50,h=50,opt){
 	if(h<=0) h = .1;
 	this.width = w;
 	this.height = h;
-	this.texture = opt.texture;
+	this.texture = opt.texture || undefined;
 	this.color = opt.color || undefined;
 	this.visibility = opt.visibility || .5;
 	this.text = opt.text || "";
 	this.textColor = opt.textColor || randomColor();
 	this.arc = opt.arc || 0;
+	this.wrf = opt.wireframe || false;
+	this.tw = opt.textureWrapping || [];
 	this.stroke = opt.stroke || 1;
 	this.strokeColor = opt.strokeColor===undefined ? randomColor() : opt.strokeColor;
+	this.touchEvent = new CustomEvent("touch",{a:undefined});
+	this.leaveEvent = new CustomEvent("leave",{a:undefined});
 	this.dom = document.createElement("Button");
+	this.dom.addEventListener("touchstart",(e)=>{
+		this.touchEvent.a = this;
+		this.touchEvent.pos = {x:e.touches[0].pageX,y:e.touches[0].pageY};
+		this.dom.dispatchEvent(this.touchEvent);
+	});
+	this.dom.addEventListener("touchend",()=>{this.dom.dispatchEvent(this.leaveEvent)});
 	this.dom.innerHTML = this.text;
 	this.class !== undefined ? this.dom.classList.add(this.class) : null;
 	this.ds = this.dom.style;
@@ -277,14 +310,30 @@ const butn = function(x=0,y=0,w=50,h=50,opt){
 	this.ds.zIndex = "2";
 	this.ds.outline = "none";
 	this.ds.color = this.textColor;
-	this.ds.backgroundImage = "URL(" + this.texture + ")";
-	this.color===undefined ? this.ds.background = "none" : this.ds.backgroundColor = this.color;
+	if(!this.wrf){
+		this.ds.backgroundImage = "url("+this.texture+".png)";
+		if(this.texture===undefined || this.texture==="" || this.texture===" ") this.ds.backgroundColor = this.color;
+		if(this.tw[0]===undefined){
+			this.ds.backgroundRepeat = F9.Pocket.txr;
+			this.ds.backgroundSize = F9.Pocket.txh===undefined ? F9.Pocket.txw+"%" : F9.Pocket.txw+"% "+F9.Pocket.txh+"%";
+		}
+		else{
+			this.ds.backgroundRepeat = this.tw[2];
+			this.ds.backgroundSize = this.tw[0]+"% "+this.tw[1]+"%";
+		}
+	}
+	else{this.ds.border = ".5px solid #ffffff"}
 	this.ds.opacity = this.visibility;
+	this.ds.border = "none";
 	this.ds.borderRadius = this.arc+"px";
-	this.ds.border = this.stroke+"px solid "+this.strokeColor;
 	document.body.appendChild(this.dom);
 	F9.Buttons.push(this);
 	F9.Pocket.RoomForAll.push(this);
+}
+butn.prototype.translate = function(x,y=0){
+	this.ds.transform = "translate("+x+"%,"+y+"%)";
+	this.x = this.x+((x/100*this.width)/sW()*100);
+	this.y = this.y-((y/100*this.height)/sH()*100);
 }
 butn.prototype.attachControl = function(ct){
 	switch(ct){
@@ -719,6 +768,7 @@ const nullify = (bodys)=>{
 	bodys.forEach(body=>{
 		try{
 			if(body instanceof prOjEctIlE){
+				body.stop();
 				document.body.removeChild(body.head.dom);
 				body.head.onMe.forEach(bodi=>{bodi.floor = bodi});
 				document.body.removeChild(body.core.dom);
@@ -766,7 +816,7 @@ const unbind = (bodys)=>{
 	return "F9: UNBINDED";
 }
 const PULLL = (cam)=>{
-	if(F9.Pocket.gravitySwitch){F9.World.Bodies.forEach(body=>{if(body instanceof obj && body.mass!==0)	body.fall(cam)})}
+	if(F9.Pocket.gravitySwitch){F9.World.Bodies.forEach(body=>{if(body instanceof obj && body.mass!==0)	requestAnimationFrame(()=>{body.fall(cam)})})}
 	requestAnimationFrame(()=>{PULLL(cam)});
 }
 const obj = function(x=0,y=0,w=50,h=50,opt){
@@ -806,10 +856,12 @@ const obj = function(x=0,y=0,w=50,h=50,opt){
 	this.shader = opt.shader || F9.Pocket.shade;
 	this.collisionEvent = new CustomEvent("collide",{a:undefined,b:undefined});
 	this.touchEvent = new CustomEvent("touch",{a:undefined,b:undefined,c:undefined});
+	this.leaveEvent = new CustomEvent("leave",{a:undefined,b:undefined,c:undefined});
 	this.disposeEvent = new CustomEvent("dispose",{a:undefined});
 	this.moveEvent = new Event("move");
 	this.offSideEvent = new CustomEvent("offSide",{side:undefined});
-	this.offScreenEvent = new CustomEvent("offScreen",{side:undefined});
+	this.offScreenEvent = new CustomEvent("offScreen",{side:undefined,a:undefined});
+	this.finishEvent = new Event("finish");
 	this.onMe = [];
 	this.net = [];
 	this.ignore = [];
@@ -841,6 +893,7 @@ const obj = function(x=0,y=0,w=50,h=50,opt){
 		this.touchEvent.pos = {x:e.touches[0].pageX,y:e.touches[0].pageY};
 		this.dom.dispatchEvent(this.touchEvent);
 	});
+	this.dom.addEventListener("touchend",()=>{this.dom.dispatchEvent(this.leaveEvent)});
 	this.ds = this.dom.style;
 	this.ds.position = "fixed";
 	this.ds.left = this.x+"px";
@@ -872,13 +925,24 @@ const obj = function(x=0,y=0,w=50,h=50,opt){
 		document.body.appendChild(this.dom);
 	}
 }
-obj.prototype.ignore = function(...bodys){bodys.forEach(body=>{this.ignore.push(body)})}
+obj.prototype.omit = function(...bodys){
+	bodys.forEach(body=>{
+		this.ignore.push(body);
+		body.ignore.push(this);
+	});
+}
+obj.prototype.unOmit = function(...bodys){
+	bodys.forEach(body=>{
+		this.ignore = this.ignore.filter(bodi=>{return bodi!==body});
+		body.ignore = body.ignore.filter(bodi=>{return bodi!==this});
+	});
+}
 obj.prototype.center = function(){return {x: this.x+(this.width/2),y: this.y+(this.height/2)}}
-obj.prototype.connect = function(...bodys){bodys.forEach(body=>{body instanceof prOjEctIlE ? this.net.push(body.core) : this.net.push(body)})}
-obj.prototype.disconnect = function(...bodys){bodys.forEach(body=>{body instanceof prOjEctIlE ? this.net = this.net.filter(bodi=>{return bodi!==body.core}) : this.net = this.net.filter(bodi=>{return bodi!==body})})}
+obj.prototype.connect = function(...bodys){bodys.forEach(body=>{body instanceof prOjEctIlE ? this.net.push(body.head) : this.net.push(body)})}
+obj.prototype.disconnect = function(...bodys){bodys.forEach(body=>{body instanceof prOjEctIlE ? this.net = this.net.filter(bodi=>{return bodi!==body.head}) : this.net = this.net.filter(bodi=>{return bodi!==body})})}
 obj.prototype.disconnectAll = function(){this.net = []}
 obj.prototype.isConnectedTo = function(body){
-	if(body instanceof prOjEctIlE){return this.net.includes(body.core)}
+	if(body instanceof prOjEctIlE){return this.net.includes(body.head)}
 	else{return (this.net.includes(body) || body.net.includes(this))}
 }
 obj.prototype.rotateX = function(theta){
@@ -973,21 +1037,25 @@ obj.prototype.checkBound = function(){
 obj.prototype.checkOffScreen = function(){
 	if(this.x+this.xcrop<0){
 		this.offScreenEvent.side = "left";
+		this.offScreenEvent.a = this;
 		this.dom.dispatchEvent(this.offScreenEvent);
 		if(this.constrainKey) wcnstr("left",this);
 	}
 	else if(this.x+this.width-this.xcrop>sW()){
 		this.offScreenEvent.side = "right";
+		this.offScreenEvent.a = this;
 		this.dom.dispatchEvent(this.offScreenEvent);
 		if(this.constrainKey) wcnstr("right",this);
 	}else{}
 	if(this.y+this.ycrop<0){
 		this.offScreenEvent.side = "bottom";
+		this.offScreenEvent.a = this;
 		this.dom.dispatchEvent(this.offScreenEvent);
 		if(this.constrainKey) wcnstr("bottom",this);
 	}
 	else if(this.y+this.height-this.ycrop>sH()){
 		this.offScreenEvent.side = "top";
+		this.offScreenEvent.a = this;
 		this.dom.dispatchEvent(this.offScreenEvent);
 		if(this.constrainKey) wcnstr("top",this);
 	}else{}
@@ -1215,7 +1283,7 @@ obj.prototype.vJUMP = function(returning=false,externalForce=false,jv=this.jumpS
 			if(this.net.length) this.net.forEach(body=>{body.vJUMP(true,tru,jv,mh)});
 		}
 		this.checkBound();
-		if(this.constrainKey) this.checkOffScreen();
+		this.checkOffScreen();
 		this.dom.dispatchEvent(this.moveEvent);
 		if(F9.Pocket.collisionDetection && this.isRigid) checkCollision(0,this,0,mh,jv);
 		this.aFj = requestAnimationFrame(()=>{this.vJUMP(true,externalForce,jv,mh)});
@@ -1289,6 +1357,70 @@ obj.prototype.fall = function(){
 }
 obj.prototype.hide = function(){this.ds.display = "none"}
 obj.prototype.show = function(){this.ds.display = "block"}
+obj.prototype.translate = function(opt){
+	let ease = opt.ease || 5;
+	let xcompletn = ycompletn = false;
+	if(opt.x<this.x+(this.width/2)){
+		const AnimL = () =>{
+			if(this.x+(this.width/2)>opt.x){
+				this.vLEFT(true,opt.ease);
+				this.laf = requestAnimationFrame(()=>{AnimL()});
+			}
+			else if(this.x+(this.width/2)<opt.x){
+				this.POS_X(opt.x-(this.width/2));
+				xcompletn = true;
+				if(xcompletn && ycompletn) this.dom.dispatchEvent(this.finishEvent);
+			}
+			else{return}
+		}
+		AnimL();
+	}
+	else if(opt.x>this.x+(this.width/2)){
+		const AnimR = () =>{
+			if(this.x+(this.width/2)<opt.x){
+				this.vRIGHT(true,opt.ease);
+				this.raf = requestAnimationFrame(()=>{AnimR()});
+			}
+			else if(this.x+(this.width/2)>opt.x){
+				this.POS_X(opt.x-(this.width/2));
+				xcompletn = true;
+				if(xcompletn && ycompletn) this.dom.dispatchEvent(this.finishEvent);
+			}
+			else{return}
+		}
+		AnimR();
+	}else{}
+	if(opt.y<this.y+(this.height/2)){
+		const AnimD = () =>{
+			if(this.y+(this.height/2)>sH()-opt.y){
+				this.vDOWN(true,opt.ease);
+				this.daf = requestAnimationFrame(()=>{AnimD()});
+			}
+			else if(this.y+(this.height/2)<sH()-opt.y){
+				this.POS_Y((sH()-this.y)-(this.height/2));
+				ycompletn = true;
+				if(xcompletn && ycompletn) this.dom.dispatchEvent(this.finishEvent);
+			}
+			else{return}
+		}
+		AnimD();
+	}
+	else if(opt.y>this.y+(this.height/2)){
+		const AnimU = () =>{
+			if(this.y+(this.height/2)<opt.y){
+				this.vUP(true,opt.ease);
+				this.uaf = requestAnimationFrame(()=>{AnimU()});
+			}
+			else if(this.y+(this.height/2)>opt.y){
+				this.POS_Y(opt.y-(this.height/2));
+				ycompletn = true;
+				if(xcompletn && ycompletn) this.dom.dispatchEvent(this.finishEvent);
+			}
+			else{return}
+		}
+		AnimU();
+	}else{}	
+}
 const tile = function(x=0,y=0,w=50,h=50,opt){
 	this.x = x;
 	this.y = y;
@@ -1684,13 +1816,31 @@ const RST = function(){
 	this.targets = [];
 	this.axis = "xy";
 	window.addEventListener("touchstart",(e)=>{
-		if(F9.Pocket.rst){
+		let km = false
+		let posx = e.touches[0].pageX;
+		let posy = e.touches[0].pageY;
+		F9.Buttons.forEach(btn=>{
+			let xw = posX(btn.x)+btn.width;
+			let yh = posY(btn.y)+btn.height;
+			if(posx>posX(btn.x) && posx<xw && sH()-posy>posY(btn.y) && sH()-posy<yh){return}else{km = true}
+		});
+		if(F9.Pocket.rst && km){
 			this.stXCord = e.touches[0].pageX;
 			this.stYCord = e.touches[0].pageY;
 		}else{return}
 	},true);
 	window.addEventListener("touchmove",(e)=>{
-		if(F9.Pocket.rst){
+		let ko = false;
+		let posx1 = e.touches[0].pageX;
+		let posy1 = e.touches[0].pageY;
+		F9.Buttons.forEach(btn=>{
+			let xw1 = posX(btn.x)+btn.width;
+			let yh1 = posY(btn.y)+btn.height;
+			let xw = posX(btn.x)+btn.width;
+			let yh = posY(btn.y)+btn.height;
+			if(posx1>posX(btn.x) && posx1<xw1 && sH()-posy1>=posY(btn.y) && sH()-posy1<yh1){return}else{ko = true}
+		});
+		if(F9.Pocket.rst && ko){
 			this.newXCord = e.touches[0].pageX;
 			this.newYCord = e.touches[0].pageY;
 			this.dspmX = this.newXCord-this.stXCord;
@@ -1717,32 +1867,40 @@ const CST = function(){
 	this.axis = "xy";
 	this.ease = 0;
 	window.addEventListener("touchstart",(e)=>{
-		if(F9.Pocket.cst){
+		let km = false
+		let posx = e.touches[0].pageX;
+		let posy = e.touches[0].pageY;
+		F9.Buttons.forEach(btn=>{
+			let xw = posX(btn.x)+btn.width;
+			let yh = posY(btn.y)+btn.height;
+			if(posx>posX(btn.x) && posx<xw && sH()-posy>posY(btn.y) && sH()-posy<yh){return}else{km = true}
+		});
+		if(F9.Pocket.cst && km){
 			cancelAnimationFrame(this.laf);
 			cancelAnimationFrame(this.raf);
 			cancelAnimationFrame(this.daf);
 			cancelAnimationFrame(this.uaf);
-			this.stXCord = e.touches[0].pageX;
-			this.stYCord = e.touches[0].pageY;
+			this.stXCord = posx;
+			this.stYCord = posy;
 			this.targets.forEach(target=>{
 				if(this.ease<=0){
 					target.position(this.stXCord-(target.width/2),(sH()-this.stYCord)-(target.height/2));
 					switch(Math.floor(Math.random()*4)){
-					case 0: 
-						target.vUP(true,.1);
-						target.vDOWN(true,.1);
-						break;
-					case 1:
-						target.vDOWN(true,.1);
-						target.vUP(true,.1);
-						break;
-					case 2:
-						target.vLEFT(true,.1);
-						target.vRIGHT(true,.1);
-						break;
-					default:
-						target.vRIGHT(true,.1);
-						target.vLEFT(true,.1);
+						case 0: 
+							target.vUP(true,.1);
+							target.vDOWN(true,.1);
+							break;
+						case 1:
+							target.vDOWN(true,.1);
+							target.vUP(true,.1);
+							break;
+						case 2:
+							target.vLEFT(true,.1);
+							target.vRIGHT(true,.1);
+							break;
+						default:
+							target.vRIGHT(true,.1);
+							target.vLEFT(true,.1);
 					}
 				}
 				else{
@@ -1750,52 +1908,62 @@ const CST = function(){
 						const AnimL = () =>{
 							if(target.x+(target.width/2)>this.stXCord){
 								target.vLEFT(true,this.ease);
-								this.laf = requestAnimationFrame(AnimL);
+								this.laf = requestAnimationFrame(()=>{AnimL()});
 							}
 							else if(target.x+(target.width/2)<this.stXCord){target.POS_X(this.stXCord-(target.width/2))}
 							else{return}
 						}
-					AnimL();
+						AnimL();
 					}
 					else if((this.axis==="x" || this.axis==="xy" || this.axis==="yx") && this.stXCord>target.x+(target.width/2)){
 						const AnimR = () =>{
 							if(target.x+(target.width/2)<this.stXCord){
 								target.vRIGHT(true,this.ease);
-								this.raf = requestAnimationFrame(AnimR);
+								this.raf = requestAnimationFrame(()=>{AnimR()});
 							}
 							else if(target.x+(target.width/2)>this.stXCord){target.POS_X(this.stXCord-(target.width/2))}
 							else{return}
 						}
-					AnimR();
+						AnimR();
 					}else{}
 					if((this.axis==="y" || this.axis==="xy" || this.axis==="yx") && sH()-this.stYCord<target.y+(target.height/2)){
 						const AnimD = () =>{
 							if(target.y+(target.height/2)>sH()-this.stYCord){
 								target.vDOWN(true,this.ease);
-								this.daf = requestAnimationFrame(AnimD);
+								this.daf = requestAnimationFrame(()=>{AnimD()});
 							}
 							else if(target.y+(target.height/2)<sH()-this.stYCord){target.POS_Y((sH()-this.stYCord)-(target.height/2))}
 							else{return}
 						}
-					AnimD();
+						AnimD();
 					}
 					else if((this.axis==="y" || this.axis==="xy" || this.axis==="yx") && sH()-this.stYCord>target.y+(target.height/2)){
 						const AnimU = () =>{
 							if(target.y+(target.height/2)<sH()-this.stYCord){
 								target.vUP(true,this.ease);
-								this.uaf = requestAnimationFrame(AnimU);
+								this.uaf = requestAnimationFrame(()=>{AnimU});
 							}
 							else if(target.y+(target.height/2)>sH()-this.stYCord){target.POS_Y((sH()-this.stYCord)-(target.height/2))}
 							else{return}
 						}
-					AnimU();
+						AnimU();
 					}else{}		
 				}
 			});
 		}else{return}
 	},true);
 	window.addEventListener("touchmove",(e)=>{
-		if(F9.Pocket.cst){
+		let ko = false;
+		let posx1 = e.touches[0].pageX;
+		let posy1 = e.touches[0].pageY;
+		F9.Buttons.forEach(btn=>{
+			let xw1 = posX(btn.x)+btn.width;
+			let yh1 = posY(btn.y)+btn.height;
+			let xw = posX(btn.x)+btn.width;
+			let yh = posY(btn.y)+btn.height;
+			if(posx1>posX(btn.x) && posx1<xw1 && sH()-posy1>=posY(btn.y) && sH()-posy1<yh1){return}else{ko = true}
+		});
+		if(F9.Pocket.cst && ko){
 			this.newXCord = e.touches[0].pageX;
 			this.newYCord = e.touches[0].pageY;
 			this.dspmX = this.newXCord-this.stXCord;
@@ -1825,19 +1993,21 @@ const aUdIO = function(src){
 	this.audio = new Audio();
 	this.audio.src = src;
 	this.audio.preload = "auto";
+	F9.Media.Audios.push(this);
 }
 aUdIO.prototype.play = function(){
-	try{this.audio.play()}catch(err){}
+	this.audio.muted = false;
+	this.audio.play();
 	this.audio.currentTime = ".01";
 	return this;
 }
 aUdIO.prototype.stop = function(){
-	try{this.audio.pause()}catch(err){}
-	this.audio.currentTime = ".01";
+	this.audio.pause()
+	this.audio.currentTime = ".03";
 	return this;
 }
 aUdIO.prototype.pause = function(){
-	try{this.audio.pause()}catch(err){}
+	this.audio.pause();
 	return this;
 }
 aUdIO.prototype.volume = function(perc){
@@ -1860,4 +2030,4 @@ F9.Controls.RelativeScreenTouch = function(){return new RST()}
 F9.Controls.CordinateScreenTouch = function(){return new CST()}
 F9.Projectile.Add = (x,y,w,h,opt)=>{return new prOjEctIlE(x,y,w,h,opt)}
 F9.Vector = (x,y)=>{return new VeCToR(x,y)}
-F9.Audio = (src)=>{return new aUdIO(src)}
+F9.Media.Audio = (src)=>{return new aUdIO(src)}

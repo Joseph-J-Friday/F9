@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title></title>
+<script src="F9.js"></script>
+<script src="methods.js"></script>
+</head>
+<body>
+</body>
+</html>
+
+<script>
+const engine = F9.Engine.Start();
+engine.mapSize(sW(),sH());
+engine.setType("ALL");
+engine.gravity("ON");
+engine.background("#000");
+engine.autoBind();
+engine.textureWrapping({
+	w:100,
+	h:100,
+	repeat: "no-repeat"
+});
+engine.collisionDetection("ON");
+engine.softMechanics("OFF");
+
+const camera = F9.Camera.Mount();
+
+let snd1 = F9.Media.Audio("peew.wav").volume(5);
+let snd2 = F9.Media.Audio("coinsound.wav").volume(8);
+
+let Coins = [];
+let coinM = 3;
+let Money = 0;
+let GAME_STATE = true;
+let ATTACK_KEY = true;
+let SPAWN_KEY = true;
+let loaded360 = true;
+
+let activate360 = F9.Button.Add(100,30,30,30,{color:"#ff4040",arc:5,visibility:1});
+activate360.translate(-120);
+activate360.ds.boxShadow = "-2px 0px 10px #ff4040";
+activate360.on("touch",(e)=>{
+	if(loaded360){
+		loaded360 = false;
+		ATTACK_KEY = false;
+		SPAWN_KEY = false;
+		A.isRigid = false;
+		coinM = .3;
+		shield(true);
+		drag1.deactivate();
+		drag2.deactivate();
+		Coins.forEach(coin=>{coin.main.setMass(.3)});
+		A.translate({x:sW(.5),y:sH(.5),ease:10});
+		F9.Recursion.Recur(".5s",()=>{
+			blast360();
+		},"1x");
+	}else{}
+});
+
+
+const shield = (bool)=>{bool ? A.ds.boxShadow = "-1px 0px 70px dodgerblue" : A.ds.boxShadow = ""}
+
+
+let A = F9.RigidBody.Add(sW(.5)-25,100,50,50,{arc:100,crop:[30],texture:"peaker"});
+A.ds.zIndex = "2";
+A.constrainToWindow();
+A.on("collide",(e)=>{
+	if(e.b.id==="coin"){
+		e.a.preventDefault();
+		F9.Garbage.Collect(e.b);
+		Money++;
+		snd2.play();
+	}
+	else{}
+});
+
+
+const blast360 = function(){
+	let angle = 90;
+	let current_bullet;
+	let blastSession = F9.Recursion.Recur(".01s",()=>{
+		let current_bullet = F9.Projectile.Add(A.center().x+1,A.center().y,4,30,{color:"deepskyblue",arc:100});
+		current_bullet.on("collide",(e)=>{F9.Garbage.Collect(e.b)});
+		current_bullet.on("offScreen",(e)=>{F9.Garbage.Collect(e.a)});
+		current_bullet.velocity = 2.2;
+		current_bullet.rotate(angle);
+		A.rotateZ(-angle+90);
+		current_bullet.launch();
+		snd1.play();
+		angle += 6;
+		if(angle>=360) angle = 0;
+	},"61x").on("finish",()=>{
+		loaded360 = false;
+		ATTACK_KEY = false;
+		SPAWN_KEY = false;
+		A.isRigid = false;
+		coinM = .3;
+		shield(true);
+		drag1.deactivate();
+		drag2.deactivate();
+		Coins.forEach(coin=>{coin.main.setMass(.3)});
+		A.translate({x:sW(.5),y:sH(.5),ease:10}).on("finish",()=>{alert()});
+	});
+}
+
+
+const shootbtn = F9.RigidBody.Add(sW(.5)-25,10,50,50,{texture: "btn"});
+shootbtn.ds.zIndex = "2";
+shootbtn.constrainToWindow();
+shootbtn.setColliders({});
+
+
+class coin{
+	constructor(){
+		this.x = Math.floor(Math.random()*sW()-20);
+		this.y = sH()-20;
+		this.size = 20;
+		this.main = F9.RigidBody.Add(this.x,this.y,this.size,this.size,{texture:"f9coin",mass:coinM});
+		this.main.id = "coin";
+		this.main.on("offScreen",()=>{
+			F9.Garbage.Collect(this,this.main);
+			delete(this,Coins);
+		});
+		this.main.on("collide",(e)=>{
+			if(e.b===A){
+				e.a.preventDefault();
+				F9.Garbage.Collect(e.a);
+				Money++;
+				snd2.play();
+			}
+			else{}
+		});
+		Coins.push(this);
+		return this.main;
+	}
+}
+
+let coinSpawner = F9.Recursion.Recur(".1s",()=>{if(SPAWN_KEY) requestAnimationFrame(()=>{new coin()})});
+
+class triplefire{
+	constructor(){
+		this.bullet1 = F9.Projectile.Add(A.x+A.xcrop+4,A.y+A.height-15,2,6,{arc:100});
+		this.bullet1.on("collide",(e)=>{F9.Recursion.Recur(".1s",()=>{F9.Garbage.Collect(e.a,e.b)},"1x")});
+		this.bullet1.on("offScreen",(e)=>{F9.Garbage.Collect(this.bullet1)});
+		this.bullet1.rotate(100);
+		this.bullet1.velocity = 2.5;
+		this.bullet1.dieAfter(".5s");
+		this.bullet1.omit(A,shootbtn);
+		
+		this.bullet2 = F9.Projectile.Add(A.center().x+1,A.y+A.height,3,4,{arc:100});
+		this.bullet2.on("collide",(e)=>{F9.Recursion.Recur(".1s",()=>{F9.Garbage.Collect(e.a,e.b)},"1x")});
+		this.bullet2.on("offScreen",(e)=>{F9.Garbage.Collect(this.bullet2)});
+		this.bullet2.velocity = 2.5;
+		this.bullet2.dieAfter(".5s");
+		this.bullet2.omit(A,shootbtn);
+		
+		this.bullet3 = F9.Projectile.Add(A.x+A.width-A.xcrop-3,A.y+A.height-15,2,6,{arc:100});
+		this.bullet3.on("collide",(e)=>{F9.Recursion.Recur(".1s",()=>{F9.Garbage.Collect(e.a,e.b)},"1x")});
+		this.bullet3.on("offScreen",(e)=>{F9.Garbage.Collect(this.bullet3)});
+		this.bullet3.rotate(80);
+		this.bullet3.velocity = 2.5;
+		this.bullet3.dieAfter(".5s");
+		this.bullet3.omit(A,shootbtn);
+	}
+	launch(){
+		this.bullet1.launch();
+		this.bullet2.launch();
+		this.bullet3.launch();
+	}
+}
+
+
+class doublefire{
+	constructor(){
+		this.bullet1 = F9.Projectile.Add(A.x+A.xcrop+4,A.y+A.height-15,2,6,{arc:100});
+		this.bullet1.on("collide",(e)=>{F9.Recursion.Recur(".1s",()=>{F9.Garbage.Collect(e.a,e.b)},"1x")});
+		this.bullet1.on("offScreen",(e)=>{F9.Garbage.Collect(this.bullet1)});
+		this.bullet1.velocity = 2.5;
+		this.bullet1.dieAfter(".4s");
+		this.bullet1.omit(A,shootbtn);
+		
+		this.bullet2 = F9.Projectile.Add(A.x+A.width-A.xcrop-3,A.y+A.height-15,2,6,{arc:100});
+		this.bullet2.on("collide",(e)=>{F9.Recursion.Recur(".1s",()=>{F9.Garbage.Collect(e.a,e.b)},"1x")});
+		this.bullet2.on("offScreen",(e)=>{F9.Garbage.Collect(this.bullet2)});
+		this.bullet2.velocity = 2.5;
+		this.bullet2.dieAfter(".4s");
+		this.bullet2.omit(A,shootbtn);
+	}
+	launch(){
+		this.bullet1.launch();
+		this.bullet2.launch();
+	}	
+}
+
+
+class singlefire{
+	constructor(){
+		this.bullet = F9.Projectile.Add(A.center().x+1,A.y+A.height-10,2,6,{arc:100});
+		this.bullet.on("collide",(e)=>{F9.Garbage.Collect(e.a,e.b)});
+		this.bullet.on("offScreen",(e)=>{F9.Garbage.Collect(this.bullet)});
+		this.bullet.omit(A,shootbtn);
+		this.bullet.rotate(90);
+		this.bullet.velocity = 1.8;
+		this.bullet.dieAfter(".5s");
+		return this.bullet;	
+	}
+}
+
+
+let fireKey = false;
+let fireLoop;
+shootbtn.on("touch",()=>{
+	if(ATTACK_KEY){
+		coinM = 5;
+		Coins.forEach(coin=>{coin.main.setMass(5)});
+		fireLoop = F9.Recursion.Recur(".01s",()=>{
+			snd1.play();
+			requestAnimationFrame(()=>{new singlefire().launch()});
+		});
+	}
+});
+shootbtn.on("leave",()=>{
+	if(ATTACK_KEY){
+		coinM = 3;
+		Coins.forEach(coin=>{coin.main.setMass(3)});
+		snd1.stop();
+		fireLoop.stop();
+	}
+});
+
+
+const drag1 = F9.Controls.RelativeScreenTouch();
+drag1.target(shootbtn);
+drag1.axis = "x";
+drag1.activate();
+const drag2 = F9.Controls.CordinateScreenTouch();
+drag2.target(A);
+drag2.sensitivity = 200;
+drag2.axis = "x";
+drag2.ease = 30;
+drag2.activate();
+engine.run();
+</script>
